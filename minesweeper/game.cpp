@@ -3,12 +3,14 @@
 
 void game::run()
 {
-	calcCellsCount();
-	createCellsArr();
-	setBombs(20);
+	setBombs(BOMBSCOUNT);
 
-	render render(width, height);
-	render.printTable(mineField);
+	render render(SCREENWIDTH, SCREENHEIGHT, mineField);
+	//render.printMainMenu(1);
+	render.printTable();
+
+	controller control(mineField,&render,width,height);
+	control.startGameControl();
 }
 
 bool game::inField(int coord, int end)
@@ -21,8 +23,8 @@ bool game::inField(int coord, int end)
 
 void game::calcCellsCount()
 {
-	width = (SCREENWIDTH - 2) / 2;
-	height = (SCREENHEIGHT - 2) / 2;
+	width = SCREENWIDTH  / 2;
+	height = SCREENHEIGHT  / 2;
 }
 
 void game::createCellsArr()
@@ -72,3 +74,9 @@ void game::setBombs(int count)
 
 	}
 }
+
+int game::toOpenLeft()
+{return toOpen;}
+
+void game::decToOpen()
+{toOpen--;}

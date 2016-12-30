@@ -1,19 +1,29 @@
 #pragma once
 #include "cell.h"
 #include "render.h"
+#include "controller.h"
 
-
-#define SCREENWIDTH 80// TODO: change location of this
-#define SCREENHEIGHT 20
+#define BOMBSCOUNT 20
 
 class game
 {
 public:
-	game()
-	{}
+	game(int w , int h): SCREENWIDTH(w), SCREENHEIGHT(h)
+	{	
+		if (~w & 1)
+			SCREENWIDTH--;
+		if (~h & 1)
+			SCREENHEIGHT--;
+		calcCellsCount();
+		createCellsArr();
+		toOpen = width*height - BOMBSCOUNT;
+	}
 	void run();
+	int toOpenLeft();
+	void decToOpen();
 private:
-	int width, height;
+	int SCREENWIDTH, SCREENHEIGHT, width, height,
+		toOpen;
 	cell **mineField;
 	bool inField(int coord, int end);
 	void calcCellsCount();
