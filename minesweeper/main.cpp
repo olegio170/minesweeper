@@ -1,12 +1,9 @@
-#include "game.h"
-
-#define SCREENWIDTH 80// TODO: change location of this
-#define SCREENHEIGHT 20
+#include "controller.h"
 
 int main()
 {
-	game game(SCREENWIDTH,SCREENHEIGHT);
-	game.run();
+	controller control;
+	control.mainMenuControl();
 	system("pause");
 	return 0;
 }

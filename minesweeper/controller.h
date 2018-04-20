@@ -2,22 +2,33 @@
 #include <conio.h>
 #include "render.h"
 #include "cell.h"
+#include "game.h"
 
 class controller
 {
 public:
-	controller(cell** fieldPtr, render* rendPtr, int w, int h) : mineField(fieldPtr)
-		, renderPtr(rendPtr), width(w), height(h)
-	{}
-	void startGameControl();
+	controller();
+	~controller();
+	void mainMenuControl();
 private:
-	render* renderPtr;
+	int SCREENHEIGHT,SCREENWIDTH, width, height,
+		lastActiveX, lastActiveY,
+		lastActiveMenu = 0, MAINMENUCOUNT,
+		bombsCount = beginerBombsCount;
+
+	render *renderPtr;
+	game* gamePtr;
 	cell** mineField;
-	int width, height, lastActiveX = 0, lastActiveY = 0;
+
+	void setDefaultValues();
+	void setDifficulty(int count, int width, int height);
+	
+	void gameControl();
+	bool inRange(int coord, int end);
 	void changeActive(int xOffset, int yOffset);
-	void openCell(int x, int y);
-	void setFlag(int x, int y);
-	bool inField(int x, int y);
-	void handleChoose();
+	void changeActiveMenu(int offset);
+	bool handleCellChoose();
+	
+	void startGame();
 };
 

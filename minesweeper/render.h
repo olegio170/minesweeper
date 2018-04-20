@@ -1,5 +1,7 @@
 #pragma once
 #include <iostream>
+#include <vector>
+#include <string>
 #include <windows.h> 
 #include "cell.h"
 
@@ -23,41 +25,54 @@
 #define square 176
 #define flag 213
 
-#define MAINMENUCOUNT 3
+// Difficulty
+
+#define beginerBombsCount 10
+#define beginerWidth 9
+#define beginerHeight 9
+
+#define intermediateBombsCount 40
+#define intermediateWidth 16
+#define intermediateHeight 16
+
+#define expertBombsCount 99
+#define expertWidth 30
+#define expertHeight 16
 
 class render
 {
 public:
-	render(int w, int h, cell **field): SCREENWIDTH(w), SCREENHEIGHT(h), mineField(field)	
-	{
-		maxTableW = SCREENWIDTH - 1;
-		maxTableH = SCREENHEIGHT - 1;
+	render();
+	~render();
 
-		createTableArr();
-		insertBorders();
-		insertAllCells();
+	void setScreenSize(int w, int h);
+	void setMineField(cell** field);
+	
+	int  getMenuItemsCount();
 
-		table[2][1] += 9;
-		table[0][1] += 9;
-
-		table[1][2] += 7;
-		table[1][0] += 7;
-	}
-	void insertAllCells();
-	void insertActive(int x, int y, int lastActiveX, int lastActiveY);
-	void insertCell(int x, int y);
-	void printGameEnd();
-	void printTable();
-	void openAllBombs();
 	void printMainMenu(int active);
+	void printTable();
+	void printEndWon();
+	void printEndLoose();
+	void printControlInfo();
+	void printNewDifficulty(int bombsCount, int w, int h);
+	
+	void insertCell(int x, int y);
+	void insertAllCells();
+	void insertActive(int x, int y);
+	void insertActive(int x, int y, int lastActiveX, int lastActiveY);
+
+	void openAllBombs();
+	void prepareGameField();
+	void deleteTableArr();
 private:
-	int SCREENWIDTH, SCREENHEIGHT,maxTableH,maxTableW;
+	std::vector<std::string> mainMenuElements;
+	int SCREENWIDTH, SCREENHEIGHT, maxTableH, maxTableW;
 	char **table;
+	cell **mineField;
+	
 	void createTableArr();
 	void insertBorders();
 	void setColor(int text, int background);
-	cell **mineField;
-
-	char mainMenuElements[MAINMENUCOUNT][30] =
-	{ "Start game", "Options","Exit" };
+	int toRenderCord(int cord);
 };

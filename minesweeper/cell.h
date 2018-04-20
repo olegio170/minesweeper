@@ -5,6 +5,8 @@ class cell
 public:
 	cell() : value(' '),is_open(false),is_flaged(false)
 	{}
+	~cell()
+	{}
 	char getValue();
 	void setValue(char t);
 	void incrementValue();

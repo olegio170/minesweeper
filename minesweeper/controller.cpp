@@ -1,10 +1,76 @@
 #include "controller.h"
 
-void controller::startGameControl()
+controller::controller() 
 {
+	setDefaultValues();
+	renderPtr = new render();
+	MAINMENUCOUNT = renderPtr->getMenuItemsCount();
+}
+
+controller::~controller()
+{
+	delete renderPtr;
+}
+
+void controller::mainMenuControl()
+{
+	renderPtr->printMainMenu(0);
+
 	char input;
 	do
-	{	
+	{
+		input = _getch();
+		switch (input)
+		{
+		case 'w':
+			changeActiveMenu(-1);
+			break;
+		case 's':
+			changeActiveMenu(1);
+			break;
+		case 13: // Enter
+			switch (lastActiveMenu)
+			{
+			case 0:
+				startGame();
+				renderPtr->printMainMenu(lastActiveMenu);
+				renderPtr->deleteTableArr();
+				setDefaultValues();
+				delete gamePtr;
+				break;
+			case 1: // beginer
+				setDifficulty(beginerBombsCount, beginerWidth, beginerHeight);
+				break;
+			case 2: // intermediate
+				setDifficulty(intermediateBombsCount, intermediateWidth, intermediateHeight);
+				break;
+			case 3: // expert
+				setDifficulty(expertBombsCount, expertWidth, expertHeight);
+				break;
+			case 4:
+				renderPtr->printControlInfo();
+				renderPtr->printMainMenu(lastActiveMenu);
+				break;
+			case 5:
+				exit(0);
+				break;
+			default:
+				break;
+			}
+			break;
+		default:
+			break;
+		}
+	} while (1);
+}
+
+void controller::gameControl()
+{
+	renderPtr->printTable();
+	bool doInput = true;
+	char input;
+	do
+	{
 		input = _getch();
 		switch (input)
 		{
@@ -21,18 +87,46 @@ void controller::startGameControl()
 			changeActive(0, 1);
 			break;
 		case 'o':
-			setFlag(lastActiveX,lastActiveY);
+			gamePtr->setFlag(lastActiveX, lastActiveY);
 			break;
 		case 13: // Enter
-			handleChoose();
+			doInput = handleCellChoose();
+			break;
+		case 27:// Esc
+			doInput = false;
 			break;
 		default:
 			break;
 		}
-		int a = 0;
-		
-	} while (1);
-	
+
+	} while (doInput);
+
+}
+
+
+void controller::setDefaultValues()
+{
+	bombsCount = beginerBombsCount;
+	width = beginerWidth;
+	height = beginerHeight;
+	lastActiveX = 0;
+	lastActiveY = 0;
+}
+
+void controller::setDifficulty(int count, int w, int h)
+{
+	bombsCount = count;
+	width = w;
+	height = h;
+	renderPtr->printNewDifficulty(bombsCount, w , h);
+}
+
+bool controller::inRange(int coord, int end)
+{
+	if (coord >= 0 && coord < end)
+		return true;
+	else
+		return false;
 }
 
 void controller::changeActive(int xOffset, int yOffset)
@@ -40,7 +134,7 @@ void controller::changeActive(int xOffset, int yOffset)
 	int x = lastActiveX + xOffset,
 		y = lastActiveY + yOffset;
 
-	if (!inField(x,y))
+	if (!inRange(x, height) || !inRange(y, width))
 		return;
 
 	renderPtr->insertActive(x, y, lastActiveX, lastActiveY);
@@ -50,58 +144,57 @@ void controller::changeActive(int xOffset, int yOffset)
 	lastActiveY = y;
 }
 
-void controller::openCell(int x, int y)
+void controller::changeActiveMenu(int offset)
 {
-	if (!inField(x, y) || !mineField[x][y].open() || mineField[x][y].getValue() == '*')
+	int active = lastActiveMenu + offset;
+
+	if (!inRange(active, MAINMENUCOUNT))
 		return;
-	
-	renderPtr->insertCell(x,y);
 
-	if (mineField[x][y].getValue() == ' ')
-	{
-		openCell(x + 1, y);
-		openCell(x - 1, y);
+	renderPtr->printMainMenu(active);
 
-		openCell(x, y + 1);
-		openCell(x, y - 1);
-	}
+	lastActiveMenu = active;
 }
 
-bool controller::inField(int x, int y)
+bool controller::handleCellChoose()
 {
-	if (x < 0 || x >= height || y < 0 || y >= width)
-		return false;
-	else
-		return true;
-}
-
-void controller::setFlag(int x, int y)
-{
-	 cell *cellPtr = &mineField[x][y];
-
-	 if (cellPtr->isOpen())
-		 return;
-
-	if (!cellPtr->isFlaged())
-		cellPtr->setFlag();
-	else
-		cellPtr->unSetFlag();
-	 
-	renderPtr->insertCell(x, y);
-	renderPtr->printTable();
-}
-
-void controller::handleChoose()
-{
+	bool doInput = true;
 	cell *element = &mineField[lastActiveX][lastActiveY];
-	
-	if (element->isFlaged())
-		return;
-	
+
+	if (element->isOpen() || element->isFlaged())
+		return doInput;
+
 	if (element->getValue() == '*')
+	{
 		renderPtr->openAllBombs();
-	else {
-		openCell(lastActiveX, lastActiveY);
 		renderPtr->printTable();
+		renderPtr->printEndLoose();
+		doInput = false;
 	}
+	else {
+		gamePtr->openCell(lastActiveX, lastActiveY);
+		renderPtr->printTable();
+		if (!gamePtr->getToOpen())
+		{
+			renderPtr->printEndWon();
+			doInput = false;
+		}
+	}
+
+	return doInput;
+}
+
+void controller::startGame()
+{
+	gamePtr = new game(width, height, renderPtr);
+	gamePtr->setBombs(bombsCount);
+	mineField = gamePtr->getMineField();
+	
+	renderPtr->setMineField(mineField);
+	renderPtr->setScreenSize(width, height);
+	renderPtr->prepareGameField();
+	renderPtr->insertActive(0, 0);
+	renderPtr->insertAllCells();
+	
+	gameControl();
 }

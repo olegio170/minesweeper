@@ -1,44 +1,51 @@
 #include "game.h"
 #include <time.h>
 
-void game::run()
+game::game(int w, int h, render* render) : width(w), height(h), renderPtr(render)
 {
-	setBombs(BOMBSCOUNT);
-
-	render render(SCREENWIDTH, SCREENHEIGHT, mineField);
-	//render.printMainMenu(1);
-	render.printTable();
-
-	controller control(mineField,&render,width,height);
-	control.startGameControl();
+	createCellsArr();
 }
 
-bool game::inField(int coord, int end)
+game::~game()
 {
-	if (coord >= 0 && coord <= end)
-		return true;
+	deleteCellsArr();
+}
+
+
+int game::getToOpen()
+{
+	return toOpen;
+}
+
+cell** game::getMineField()
+{
+	return mineField;
+}
+
+
+void game::setFlag(int x, int y)
+{
+	cell *cellPtr = &mineField[x][y];
+
+	if (cellPtr->isOpen())
+		return;
+
+	if (!cellPtr->isFlaged())
+		cellPtr->setFlag();
 	else
-		return false;
-}
+		cellPtr->unSetFlag();
 
-void game::calcCellsCount()
-{
-	width = SCREENWIDTH  / 2;
-	height = SCREENHEIGHT  / 2;
-}
-
-void game::createCellsArr()
-{
-	mineField = new cell*[height];
-	for (int i = 0; i < height; ++i)
-		mineField[i] = new cell[width];
+	renderPtr->insertCell(x, y);
+	renderPtr->printTable();
 }
 
 void game::setBombs(int count)
 {
 	srand(time(NULL));
 
-	for (int ii = 0; ii < count; ii++)
+	toOpen = width*height - count;
+	int ii = 0;
+	while (ii < count)
 	{
 		int x = rand() % height;
 		int y = rand() % width;
@@ -49,15 +56,17 @@ void game::setBombs(int count)
 			continue;
 
 		bomb->setValue('*');
+
+		cell *element;
 		for (int i = -1; i <= 1; i++)
 		{
 			for (int j = -1; j <= 1; j++)
 			{
-				if (!inField(x + i, height - 1) ||
-					!inField(y + j, width - 1))
+				if (!inRange(x + i, height) ||
+					!inRange(y + j, width))
 					continue;
 
-				cell *element = &mineField[x + i][y + j];
+				element = &mineField[x + i][y + j];
 				switch (element->getValue())
 				{
 				case ' ':
@@ -71,12 +80,47 @@ void game::setBombs(int count)
 				}
 			}
 		}
-
+		ii++;
 	}
 }
 
-int game::toOpenLeft()
-{return toOpen;}
+void game::openCell(int x, int y)
+{
+	if (!inRange(x, height) || !inRange(y, width) || mineField[x][y].getValue() == '*' || !mineField[x][y].open())
+		return;
 
-void game::decToOpen()
-{toOpen--;}
+	toOpen--;
+	renderPtr->insertCell(x, y);
+
+	if (mineField[x][y].getValue() == ' ')
+	{
+		openCell(x + 1, y);
+		openCell(x - 1, y);
+
+		openCell(x, y + 1);
+		openCell(x, y - 1);
+	}
+}
+
+
+bool game::inRange(int coord, int end)
+{
+	if (coord >= 0 && coord < end)
+		return true;
+	else
+		return false;
+}
+
+void game::createCellsArr()
+{
+	mineField = new cell*[height];
+	for (int i = 0; i < height; i++)
+		mineField[i] = new cell[width];
+}
+
+void game::deleteCellsArr()
+{
+	for (int i = 0; i < height; i++)
+		delete[] mineField[i];
+	delete[] mineField;
+}
